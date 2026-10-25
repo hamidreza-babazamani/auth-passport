@@ -1,46 +1,64 @@
+require("dotenv").config(); // FIX: load env
 const express = require("express");
-var expressLayouts = require("express-ejs-layouts");
-const { default: mongoose, connect } = require("mongoose");
-const AllRouters = require("./routes/app");
-const flash = require("express-flash");
+const mongoose = require("mongoose");
 const session = require("express-session");
-const { passportInit } = require("./passport.config");
-
+const MongoStore = require("connect-mongo");
 const passport = require("passport");
+const helmet = require("helmet");
+const AllRouters = require("./routes/app");
+const { passportInit } = require("./passport.config");
 const { notFoundError, errorHandler } = require("./err-handling");
-const app = express();
-mongoose.connect("mongodb://localhost:27017/passport-js", {}).then(() => {
-  console.log("connected to mongodb");
-});
 
-// set up application
+const app = express();
+
+mongoose
+  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/passport-js")
+  .then(() => console.log("connected to mongodb"))
+  .catch((err) => {
+    console.error("mongo connection failed:", err);
+    process.exit(1);
+  });
+
+// FIX: security headers
+app.use(helmet());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(flash());
-//setup view engine and layout
-app.use(expressLayouts);
-app.set("view engine", "ejs");
-app.set("layout", "./layout/main.ejs");
 
-// set up session
+// FIX: real session store instead of MemoryStore
 app.use(
   session({
-    secret: "secret key",
+    secret: process.env.SESSION_SECRET || "secret key",
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl:
+        process.env.MONGO_URI || "mongodb://localhost:27017/passport-js",
+      ttl: 24 * 60 * 60, // 1 day
+    }),
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
   }),
 );
-// set up passport
+
 passportInit(passport);
 app.use(passport.initialize());
 app.use(passport.session());
-//routers
-app.use(AllRouters(passport));
+
+// FIX: expose passport to routes (used in auth.routes.js)
+app.locals.passport = passport;
+
+app.use(AllRouters());
+
 app.use(notFoundError);
 app.use(errorHandler);
+
 const PORT = process.env.PORT || 3000;
 
-// set up express server
 app.listen(PORT, () => {
-  console.log("listening on port ${PORT}");
+  // FIX: backticks
+  console.log(`listening on port ${PORT}`);
 });

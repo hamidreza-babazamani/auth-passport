@@ -1,23 +1,28 @@
 {
-  "name": "passport",
+  "name": "auth-passport",
   "version": "1.0.0",
-  "description": "",
+  "description": "Auth API with Express 5, Passport.js (local), MongoDB/Mongoose and bcrypt",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["express", "passport", "authentication", "session", "bcrypt", "mongoose", "api"],
+  "author": "Hamidreza Babazamani",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "connect-mongo": "^5.1.0",
     "express": "^5.2.1",
-    "express-ejs-layouts": "^2.5.1",
-    "express-flash": "^0.0.2",
+    "express-rate-limit": "^7.4.0",
     "express-session": "^1.19.0",
     "mongoose": "^9.9.5",
     "passport": "^0.7.0",
-    "passport-local": "^1.0.0"
+    "passport-local": "^1.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }
